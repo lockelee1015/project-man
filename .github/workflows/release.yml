@@ -1,0 +1,172 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_suffix: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            binary_suffix: ""
+          - os: macOS-latest
+            target: x86_64-apple-darwin
+            binary_suffix: ""
+          - os: macOS-latest
+            target: aarch64-apple-darwin
+            binary_suffix: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_suffix: ".exe"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build binary
+        run: |
+          if [ "${{ matrix.target }}" = "aarch64-unknown-linux-gnu" ]; then
+            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          fi
+          cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare release assets
+        shell: bash
+        run: |
+          # Create release directory
+          mkdir -p release
+          
+          # Copy binary
+          cp target/${{ matrix.target }}/release/p-bin${{ matrix.binary_suffix }} release/
+          
+          # Copy scripts
+          cp -r scripts release/
+          cp install.sh release/
+          cp dev-setup.sh release/
+          
+          # Copy documentation
+          cp README.md release/
+          cp CONTRIBUTING.md release/
+          cp LICENSE release/ 2>/dev/null || echo "LICENSE file not found, skipping..."
+          
+          # Create platform-specific archive
+          cd release
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            7z a ../project-man-${{ matrix.target }}.zip *
+          else
+            tar -czf ../project-man-${{ matrix.target }}.tar.gz *
+          fi
+
+      - name: Upload release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-man-${{ matrix.target }}
+          path: project-man-${{ matrix.target }}.*
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Project Man ${{ github.ref_name }}
+          body: |
+            ## Installation
+
+            ### Quick Install (Linux/macOS)
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/quick-install.sh | bash
+            ```
+
+            ### Manual Installation
+            1. Download the appropriate archive for your platform below
+            2. Extract the archive
+            3. Run `./install.sh` in the extracted directory
+
+            ## What's Changed
+            See the [changelog](CHANGELOG.md) for details.
+
+            ## Platform Support
+            - ✅ Linux x86_64
+            - ✅ Linux ARM64
+            - ✅ macOS Intel
+            - ✅ macOS Apple Silicon
+            - ✅ Windows x86_64
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        shell: bash
+        run: |
+          for file in artifacts/*/project-man-*; do
+            echo "Uploading $file"
+            gh release upload ${{ github.ref_name }} "$file" --clobber
+          done
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-install-script:
+    name: Update install script with latest version
+    needs: release
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update quick install script
+        run: |
+          # Update version in quick install script
+          sed -i "s/VERSION=\".*\"/VERSION=\"${{ github.ref_name }}\"/g" scripts/quick-install.sh
+          
+          # Commit if there are changes
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add scripts/quick-install.sh
+            git commit -m "Update quick install script to version ${{ github.ref_name }}"
+            git push
+          fi
