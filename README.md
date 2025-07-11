@@ -151,7 +151,7 @@ p add new/repo    # Clones and changes to the new repository
 
 ### Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed development guidelines, testing procedures, and submission process.
 
 ### License
 
@@ -306,7 +306,7 @@ p add new/repo    # 克隆并切换到新仓库
 
 ### 贡献
 
-欢迎贡献！请随时提交 Pull Request。
+欢迎贡献！请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细的开发指南、测试流程和提交规范。
 
 ### 许可证
 
