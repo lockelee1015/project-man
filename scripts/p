@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Project Man Shell Wrapper
+# This script wraps the actual binary and handles directory changes
+
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BINARY_PATH="$SCRIPT_DIR/target/release/p"
+
+# If binary doesn't exist in target/release, try current directory
+if [ ! -f "$BINARY_PATH" ]; then
+    BINARY_PATH="$SCRIPT_DIR/p-bin"
+fi
+
+# If still not found, try to find it in PATH
+if [ ! -f "$BINARY_PATH" ]; then
+    BINARY_PATH="$(which p-bin 2>/dev/null)"
+fi
+
+# If still not found, error
+if [ ! -f "$BINARY_PATH" ]; then
+    echo "❌ Error: Project Man binary not found!"
+    echo "   Expected locations:"
+    echo "   - $SCRIPT_DIR/target/release/p"
+    echo "   - $SCRIPT_DIR/p-bin"
+    echo "   - p-bin in PATH"
+    echo ""
+    echo "   Please build the project first: cargo build --release"
+    echo "   Then rename the binary: mv target/release/p target/release/p-bin"
+    exit 1
+fi
+
+# Get the first argument (command)
+cmd="$1"
+
+# Commands that might change directory
+if [ "$cmd" = "go" ] || [ "$cmd" = "add" ]; then
+    # Execute command and capture output
+    output=$("$BINARY_PATH" "$@" --output-cd 2>&1)
+    exit_code=$?
+    
+    # Check if command was successful
+    if [ $exit_code -eq 0 ]; then
+        # Look for CD_TARGET in output
+        cd_target=$(echo "$output" | grep "^CD_TARGET:" | cut -d: -f2-)
+        
+        if [ -n "$cd_target" ]; then
+            # Change to the target directory
+            cd "$cd_target" || {
+                echo "❌ Failed to change directory to: $cd_target"
+                exit 1
+            }
+            echo "📁 Changed to: $(pwd)"
+        fi
+        
+        # Show other output (excluding CD_TARGET line)
+        echo "$output" | grep -v "^CD_TARGET:"
+    else
+        # Show error output
+        echo "$output"
+        exit $exit_code
+    fi
+else
+    # For other commands, just pass through
+    exec "$BINARY_PATH" "$@"
+fi
