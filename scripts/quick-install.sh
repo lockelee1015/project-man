@@ -56,11 +56,9 @@ detect_platform() {
                 *) log_error "Unsupported architecture: $arch"; exit 1 ;;
             esac
             ;;
-        MINGW*|MSYS*|CYGWIN*)
-            echo "x86_64-pc-windows-msvc"
-            ;;
         *)
             log_error "Unsupported operating system: $os"
+            log_error "Supported platforms: Linux (x86_64, ARM64), macOS (Intel, Apple Silicon)"
             exit 1
             ;;
     esac
@@ -100,16 +98,8 @@ download_release() {
     
     log_info "Downloading Project Man $version for $platform..."
     
-    local download_url="https://github.com/$REPO/releases/download/$version/project-man-$platform"
-    local archive_name
-    
-    if [[ "$platform" == *"windows"* ]]; then
-        archive_name="project-man-$platform.zip"
-        download_url="$download_url.zip"
-    else
-        archive_name="project-man-$platform.tar.gz"
-        download_url="$download_url.tar.gz"
-    fi
+    local download_url="https://github.com/$REPO/releases/download/$version/project-man-$platform.tar.gz"
+    local archive_name="project-man-$platform.tar.gz"
     
     local archive_path="$temp_dir/$archive_name"
     
@@ -130,16 +120,7 @@ download_release() {
     
     # Extract the archive
     log_info "Extracting archive..."
-    if [[ "$archive_name" == *.zip ]]; then
-        if command -v unzip >/dev/null 2>&1; then
-            unzip -q "$archive_path" -d "$temp_dir"
-        else
-            log_error "unzip is required to extract the downloaded archive"
-            exit 1
-        fi
-    else
-        tar -xzf "$archive_path" -C "$temp_dir"
-    fi
+    tar -xzf "$archive_path" -C "$temp_dir"
     
     echo "$temp_dir"
 }
@@ -156,17 +137,12 @@ install_binary() {
     
     # Copy binary
     local binary_name="p-bin"
-    if [[ "$platform" == *"windows"* ]]; then
-        binary_name="p-bin.exe"
-    fi
     
     cp "$extract_dir/$binary_name" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/$binary_name"
     
-    # Create symlink for easier access (if not Windows)
-    if [[ "$platform" != *"windows"* ]]; then
-        ln -sf "$INSTALL_DIR/$binary_name" "$INSTALL_DIR/p"
-    fi
+    # Create symlink for easier access
+    ln -sf "$INSTALL_DIR/$binary_name" "$INSTALL_DIR/p"
     
     log_success "Binary installed to $INSTALL_DIR/$binary_name"
 }

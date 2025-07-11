@@ -26,9 +26,6 @@ jobs:
           - os: macOS-latest
             target: aarch64-apple-darwin
             binary_suffix: ""
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary_suffix: ".exe"
 
     steps:
       - name: Checkout code
@@ -73,11 +70,7 @@ jobs:
           
           # Create platform-specific archive
           cd release
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            7z a ../project-man-${{ matrix.target }}.zip *
-          else
-            tar -czf ../project-man-${{ matrix.target }}.tar.gz *
-          fi
+          tar -czf ../project-man-${{ matrix.target }}.tar.gz *
 
       - name: Upload release assets
         uses: actions/upload-artifact@v4
@@ -129,7 +122,6 @@ jobs:
             - ✅ Linux ARM64
             - ✅ macOS Intel
             - ✅ macOS Apple Silicon
-            - ✅ Windows x86_64
           draft: false
           prerelease: false
 

@@ -38,7 +38,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check if we're in the right directory (release archive)
 check_directory() {
-    if [ ! -f "$SCRIPT_DIR/p-bin" ] && [ ! -f "$SCRIPT_DIR/p-bin.exe" ]; then
+    if [ ! -f "$SCRIPT_DIR/p-bin" ]; then
         # Try source installation if no binary found
         if [ -f "$SCRIPT_DIR/Cargo.toml" ] && [ -f "$SCRIPT_DIR/src/main.rs" ]; then
             log_info "Binary not found, attempting source installation..."
@@ -99,20 +99,13 @@ install_binary() {
     # Create install directory
     mkdir -p "$INSTALL_DIR"
     
-    # Determine binary name
-    local binary_name="p-bin"
-    if [ -f "$SCRIPT_DIR/p-bin.exe" ]; then
-        binary_name="p-bin.exe"
-    fi
-    
     # Copy binary
+    local binary_name="p-bin"
     cp "$SCRIPT_DIR/$binary_name" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/$binary_name"
     
-    # Create symlink for easier access (if not Windows)
-    if [ "$binary_name" = "p-bin" ]; then
-        ln -sf "$INSTALL_DIR/$binary_name" "$INSTALL_DIR/p"
-    fi
+    # Create symlink for easier access
+    ln -sf "$INSTALL_DIR/$binary_name" "$INSTALL_DIR/p"
     
     log_success "Binary installed to $INSTALL_DIR/$binary_name"
 }
@@ -246,9 +239,6 @@ verify_installation() {
     
     # Check if binary exists and is executable
     local binary_path="$INSTALL_DIR/p-bin"
-    if [ -f "$INSTALL_DIR/p-bin.exe" ]; then
-        binary_path="$INSTALL_DIR/p-bin.exe"
-    fi
     
     if [ ! -x "$binary_path" ]; then
         log_error "Binary not found or not executable at $binary_path"
