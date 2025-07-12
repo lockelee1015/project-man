@@ -22,6 +22,8 @@ pub enum Commands {
     Add {
         #[arg(help = "Repository URL or shorthand (e.g., user/repo)")]
         repository: String,
+        #[arg(long, help = "Output directory path for shell integration")]
+        output_cd: bool,
     },
     
     #[command(about = "Navigate to a repository")]

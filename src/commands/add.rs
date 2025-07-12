@@ -2,7 +2,7 @@ use crate::config::{WorkspaceRegistry, RepositoryConfig, GlobalConfig};
 use crate::git::GitManager;
 use crate::error::Result;
 
-pub async fn execute(repository: &str) -> Result<()> {
+pub async fn execute(repository: &str, output_cd: bool) -> Result<()> {
     let git_manager = GitManager::new()?;
     let mut workspace_registry = WorkspaceRegistry::load_from_workspace()?;
     let global_config = GlobalConfig::load()?;
@@ -49,7 +49,9 @@ pub async fn execute(repository: &str) -> Result<()> {
     println!("📝 Registry updated");
     
     // Output directory for shell integration
-    println!("CD_TARGET:{}", target_path.display());
+    if output_cd {
+        println!("CD_TARGET:{}", target_path.display());
+    }
     
     Ok(())
 }

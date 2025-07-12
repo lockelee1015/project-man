@@ -31,31 +31,36 @@ p() {
     
     # Commands that might change directory
     if [ "$cmd" = "go" ] || [ "$cmd" = "add" ]; then
-        # Execute command and capture output
-        local output=$("$p_bin" "$@" --output-cd 2>&1)
+        # Use a temporary file to capture CD_TARGET while showing real-time output
+        local temp_file=$(mktemp)
+        
+        # Execute command with tee to show real-time output and capture to file
+        # Use set -o pipefail to capture proper exit code from the first command
+        (
+            set -o pipefail
+            "$p_bin" "$@" --output-cd 2>&1 | tee "$temp_file"
+        )
         local exit_code=$?
         
         # Check if command was successful
         if [ $exit_code -eq 0 ]; then
-            # Look for CD_TARGET in output
-            local cd_target=$(echo "$output" | grep "^CD_TARGET:" | cut -d: -f2-)
+            # Look for CD_TARGET in captured output
+            local cd_target=$(grep "^CD_TARGET:" "$temp_file" | cut -d: -f2-)
             
             if [ -n "$cd_target" ]; then
                 # Change to the target directory
                 cd "$cd_target" || {
                     echo "❌ Failed to change directory to: $cd_target"
+                    rm -f "$temp_file"
                     return 1
                 }
                 echo "📁 Changed to: $(pwd)"
             fi
-            
-            # Show other output (excluding CD_TARGET line)
-            echo "$output" | grep -v "^CD_TARGET:"
-        else
-            # Show error output
-            echo "$output"
-            return $exit_code
         fi
+        
+        # Clean up
+        rm -f "$temp_file"
+        return $exit_code
     else
         # For other commands, just pass through
         "$p_bin" "$@"

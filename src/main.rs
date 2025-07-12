@@ -17,7 +17,7 @@ async fn main() -> Result<()> {
     
     let result = match cli.command {
         Commands::Init { path } => commands::init::execute(&path).await,
-        Commands::Add { repository } => commands::add::execute(&repository).await,
+        Commands::Add { repository, output_cd } => commands::add::execute(&repository, output_cd).await,
         Commands::Go { pattern, output_cd } => commands::go::execute(pattern.as_deref(), output_cd).await,
         Commands::List => commands::list::execute().await,
         Commands::Remove { pattern } => commands::remove::execute(&pattern).await,

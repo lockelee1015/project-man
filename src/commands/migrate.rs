@@ -80,8 +80,20 @@ pub async fn execute(source_path: &Path) -> Result<()> {
         }
         
         // Move the repository
-        fs::rename(&repo_path, &full_target_path)?;
-        println!("   ✅ Moved to: {}", full_target_path.display());
+        if repo_path == std::path::Path::new(".") {
+            // Special case: migrating current directory
+            // We need to move contents instead of the directory itself
+            fs::create_dir_all(&full_target_path)?;
+            
+            // Copy git directory and other contents
+            copy_directory_contents(&repo_path, &full_target_path)?;
+            
+            println!("   ✅ Contents copied to: {}", full_target_path.display());
+            println!("   📝 Note: Original directory preserved (current working directory)");
+        } else {
+            fs::rename(&repo_path, &full_target_path)?;
+            println!("   ✅ Moved to: {}", full_target_path.display());
+        }
         
         // Add to registry
         let repo_config = RepositoryConfig::new(
@@ -162,4 +174,20 @@ fn analyze_repository(repo_path: &Path, git_manager: &GitManager) -> Result<(Str
     let repo_name = target_path.replace("/", "_");
     
     Ok((repo_name, url, target_path))
+}
+
+fn copy_directory_contents(src: &Path, dst: &Path) -> Result<()> {
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+        
+        if src_path.is_dir() {
+            fs::create_dir_all(&dst_path)?;
+            copy_directory_contents(&src_path, &dst_path)?;
+        } else {
+            fs::copy(&src_path, &dst_path)?;
+        }
+    }
+    Ok(())
 }
