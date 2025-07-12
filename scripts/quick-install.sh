@@ -128,313 +128,106 @@ download_release() {
 # Install binary
 install_binary() {
     local extract_dir="$1"
-    local platform="$2"
     
-    log_info "Installing Project Man binary..."
+    log_info "Installing Project Man binary..." >&2
     
-    # Create install directory
+    # Create install directory  
     mkdir -p "$INSTALL_DIR"
     
-    # Find and copy binary
-    local binary_name="p-bin"
+    # Find binary and wrapper script
     local binary_path=""
+    local wrapper_path=""
     
-    # Look for binary in extract directory and subdirectories
-    if [ -f "$extract_dir/$binary_name" ]; then
-        binary_path="$extract_dir/$binary_name"
+    # Look for binary
+    if [ -f "$extract_dir/p-bin" ]; then
+        binary_path="$extract_dir/p-bin"
     else
-        # Search in subdirectories
-        binary_path=$(find "$extract_dir" -name "$binary_name" -type f | head -1)
+        binary_path=$(find "$extract_dir" -name "p-bin" -type f | head -1)
+    fi
+    
+    # Look for wrapper script
+    if [ -f "$extract_dir/scripts/p" ]; then
+        wrapper_path="$extract_dir/scripts/p"
+    else
+        wrapper_path=$(find "$extract_dir" -name "p" -type f | head -1)
     fi
     
     if [ -z "$binary_path" ] || [ ! -f "$binary_path" ]; then
-        log_error "Binary $binary_name not found in extracted archive"
+        log_error "Binary p-bin not found in extracted archive"
         log_error "Contents of extract directory:"
         ls -la "$extract_dir" >&2
         exit 1
     fi
     
+    if [ -z "$wrapper_path" ] || [ ! -f "$wrapper_path" ]; then
+        log_error "Wrapper script p not found in extracted archive"
+        log_error "Contents of extract directory:"
+        ls -la "$extract_dir" >&2
+        exit 1
+    fi
+    
+    # Copy files
     cp "$binary_path" "$INSTALL_DIR/"
-    chmod +x "$INSTALL_DIR/$binary_name"
+    cp "$wrapper_path" "$INSTALL_DIR/"
+    chmod +x "$INSTALL_DIR/p-bin"
+    chmod +x "$INSTALL_DIR/p"
     
-    # Create symlink for easier access
-    ln -sf "$INSTALL_DIR/$binary_name" "$INSTALL_DIR/p"
-    
-    log_success "Binary installed to $INSTALL_DIR/$binary_name"
+    log_success "Binary and wrapper installed to $INSTALL_DIR/" >&2
 }
 
 
-# Setup shell configuration
-setup_shell_config() {
-    log_info "Setting up shell configuration..."
+# Setup shell integration
+setup_shell_integration() {
+    log_info "Setting up shell integration..." >&2
     
     local shell_config=""
-    local shell_name=""
+    case "$SHELL" in
+        */bash) shell_config="$HOME/.bashrc" ;;
+        */zsh) shell_config="$HOME/.zshrc" ;;
+        *) 
+            log_error "Unsupported shell: $SHELL"
+            log_info "Please add this line to your shell config manually:"
+            echo "export PATH=\"$INSTALL_DIR:\$PATH\""
+            return
+            ;;
+    esac
     
-    # Detect shell and config file
-    if [ -n "$BASH_VERSION" ]; then
-        shell_name="bash"
-        if [ -f "$HOME/.bashrc" ]; then
-            shell_config="$HOME/.bashrc"
-        elif [ -f "$HOME/.bash_profile" ]; then
-            shell_config="$HOME/.bash_profile"
-        fi
-    elif [ -n "$ZSH_VERSION" ]; then
-        shell_name="zsh"
-        shell_config="$HOME/.zshrc"
-    else
-        # Try to detect from $SHELL
-        case "$SHELL" in
-            */bash)
-                shell_name="bash"
-                shell_config="$HOME/.bashrc"
-                ;;
-            */zsh)
-                shell_name="zsh"
-                shell_config="$HOME/.zshrc"
-                ;;
-            */fish)
-                shell_name="fish"
-                setup_fish_shell
-                return
-                ;;
-            *)
-                log_warn "Unknown shell: $SHELL"
-                setup_generic_shell
-                return
-                ;;
-        esac
-    fi
-    
-    if [ -z "$shell_config" ]; then
-        log_warn "Could not detect shell configuration file for $shell_name"
-        setup_generic_shell
-        return
-    fi
-    
-    # Create the shell function inline instead of sourcing external file
-    local function_code='
-# Project Man shell function
-p() {
-    local binary_path="'$INSTALL_DIR'/p-bin"
-    local cmd="$1"
-    
-    if [ ! -f "$binary_path" ]; then
-        echo "❌ Error: Project Man binary not found at $binary_path"
-        return 1
-    fi
-    
-    # Commands that might change directory
-    if [ "$cmd" = "go" ] || [ "$cmd" = "add" ]; then
-        # Execute command and capture output
-        local output=$("$binary_path" "$@" --output-cd 2>&1)
-        local exit_code=$?
-        
-        # Check if command was successful
-        if [ $exit_code -eq 0 ]; then
-            # Look for CD_TARGET in output
-            local cd_target=$(echo "$output" | grep "^CD_TARGET:" | cut -d: -f2-)
-            
-            if [ -n "$cd_target" ]; then
-                # Change to the target directory
-                cd "$cd_target" || {
-                    echo "❌ Failed to change directory to: $cd_target"
-                    return 1
-                }
-                echo "📁 Changed to: $(pwd)"
-            fi
-            
-            # Show other output (excluding CD_TARGET line)
-            echo "$output" | grep -v "^CD_TARGET:"
-        else
-            # Show error output
-            echo "$output"
-            return $exit_code
-        fi
-    else
-        # For other commands, just pass through
-        "$binary_path" "$@"
-    fi
-}'
-    
-    # Check if already configured
-    if grep -q "# Project Man shell function" "$shell_config" 2>/dev/null; then
-        log_info "Shell integration already configured in $shell_config"
-    else
-        # Add function to shell config
+    # Add to PATH if not already there
+    if ! grep -q "$INSTALL_DIR" "$shell_config" 2>/dev/null; then
         echo "" >> "$shell_config"
-        echo "$function_code" >> "$shell_config"
-        log_success "Shell integration added to $shell_config"
+        echo "# Project Man" >> "$shell_config"
+        echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_config"
+        log_success "Added to PATH in $shell_config" >&2
+        log_info "Restart your terminal or run: source $shell_config" >&2
+    else
+        log_info "Already configured in $shell_config" >&2
     fi
-    
-    # Load the function in current shell
-    eval "$function_code"
-    log_success "Project Man function loaded in current shell session!"
 }
 
-# Setup for fish shell
-setup_fish_shell() {
-    local fish_config="$HOME/.config/fish/config.fish"
-    mkdir -p "$(dirname "$fish_config")"
-    
-    local fish_function='
-# Project Man fish function
-function p
-    set binary_path "'$INSTALL_DIR'/p-bin"
-    set cmd $argv[1]
-    
-    if not test -f "$binary_path"
-        echo "❌ Error: Project Man binary not found at $binary_path"
-        return 1
-    end
-    
-    # Commands that might change directory
-    if test "$cmd" = "go" -o "$cmd" = "add"
-        # Execute command and capture output
-        set output ($binary_path $argv --output-cd 2>&1)
-        set exit_code $status
-        
-        if test $exit_code -eq 0
-            # Look for CD_TARGET in output
-            set cd_target (echo "$output" | grep "^CD_TARGET:" | cut -d: -f2-)
-            
-            if test -n "$cd_target"
-                # Change to the target directory
-                cd "$cd_target"
-                if test $status -eq 0
-                    echo "📁 Changed to: "(pwd)
-                else
-                    echo "❌ Failed to change directory to: $cd_target"
-                    return 1
-                end
-            end
-            
-            # Show other output (excluding CD_TARGET line)
-            echo "$output" | grep -v "^CD_TARGET:"
-        else
-            # Show error output
-            echo "$output"
-            return $exit_code
-        end
-    else
-        # For other commands, just pass through
-        $binary_path $argv
-    end
-end'
-    
-    if grep -q "# Project Man fish function" "$fish_config" 2>/dev/null; then
-        log_info "Fish shell integration already configured"
-    else
-        echo "" >> "$fish_config"
-        echo "$fish_function" >> "$fish_config"
-        log_success "Fish shell integration added to $fish_config"
-    fi
-    
-    log_info "Fish shell detected. Please restart your terminal or run:"
-    log_info "source $fish_config"
-}
-
-# Setup for unknown shells
-setup_generic_shell() {
-    log_warn "Automatic setup not supported for your shell: $SHELL"
-    log_info "Please add the following to your shell configuration:"
-    echo ""
-    echo "# Project Man shell function"
-    echo "p() {"
-    echo "    local binary_path=\"$INSTALL_DIR/p-bin\""
-    echo "    local cmd=\"\$1\""
-    echo "    "
-    echo "    if [ ! -f \"\$binary_path\" ]; then"
-    echo "        echo \"❌ Error: Project Man binary not found at \$binary_path\""
-    echo "        return 1"
-    echo "    fi"
-    echo "    "
-    echo "    if [ \"\$cmd\" = \"go\" ] || [ \"\$cmd\" = \"add\" ]; then"
-    echo "        local output=\$(\"\$binary_path\" \"\$@\" --output-cd 2>&1)"
-    echo "        local exit_code=\$?"
-    echo "        if [ \$exit_code -eq 0 ]; then"
-    echo "            local cd_target=\$(echo \"\$output\" | grep \"^CD_TARGET:\" | cut -d: -f2-)"
-    echo "            if [ -n \"\$cd_target\" ]; then"
-    echo "                cd \"\$cd_target\" && echo \"📁 Changed to: \$(pwd)\""
-    echo "            fi"
-    echo "            echo \"\$output\" | grep -v \"^CD_TARGET:\""
-    echo "        else"
-    echo "            echo \"\$output\""
-    echo "            return \$exit_code"
-    echo "        fi"
-    echo "    else"
-    echo "        \"\$binary_path\" \"\$@\""
-    echo "    fi"
-    echo "}"
-    echo ""
-}
-
-# Update PATH
-update_path() {
-    log_info "Updating PATH configuration..."
-    
-    # Check if install directory is already in PATH
-    if echo "$PATH" | grep -q "$INSTALL_DIR"; then
-        log_info "$INSTALL_DIR is already in PATH"
-        return
-    fi
-    
-    # Detect shell config file (same logic as above)
-    local shell_config=""
-    if [ -n "$BASH_VERSION" ]; then
-        if [ -f "$HOME/.bashrc" ]; then
-            shell_config="$HOME/.bashrc"
-        elif [ -f "$HOME/.bash_profile" ]; then
-            shell_config="$HOME/.bash_profile"
-        fi
-    elif [ -n "$ZSH_VERSION" ]; then
-        shell_config="$HOME/.zshrc"
-    else
-        case "$SHELL" in
-            */bash) shell_config="$HOME/.bashrc" ;;
-            */zsh) shell_config="$HOME/.zshrc" ;;
-        esac
-    fi
-    
-    if [ -n "$shell_config" ]; then
-        # Check if PATH update already exists
-        if ! grep -q "$INSTALL_DIR" "$shell_config" 2>/dev/null; then
-            echo "" >> "$shell_config"
-            echo "# Project Man PATH" >> "$shell_config"
-            echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_config"
-            log_success "Added $INSTALL_DIR to PATH in $shell_config"
-        fi
-    else
-        log_warn "Could not detect shell configuration file"
-        log_info "Please add $INSTALL_DIR to your PATH manually"
-    fi
-}
 
 # Verify installation
 verify_installation() {
-    log_info "Verifying installation..."
+    log_info "Verifying installation..." >&2
     
-    # Check if binary exists and is executable
-    local binary_path="$INSTALL_DIR/p-bin"
-    if [ ! -x "$binary_path" ]; then
-        log_error "Binary not found or not executable at $binary_path"
+    # Check if binary and wrapper exist and are executable
+    if [ ! -x "$INSTALL_DIR/p-bin" ]; then
+        log_error "Binary not found or not executable at $INSTALL_DIR/p-bin"
+        return 1
+    fi
+    
+    if [ ! -x "$INSTALL_DIR/p" ]; then
+        log_error "Wrapper script not found or not executable at $INSTALL_DIR/p"
         return 1
     fi
     
     # Test binary execution
-    if "$binary_path" --version >/dev/null 2>&1; then
-        log_success "Project Man binary is working correctly"
+    if "$INSTALL_DIR/p-bin" --version >/dev/null 2>&1; then
+        log_success "Project Man binary is working correctly" >&2
     else
-        log_warn "Binary exists but may not be working correctly"
+        log_warn "Binary exists but may not be working correctly" >&2
     fi
     
-    # Check if shell function is available (test in current shell)
-    if command -v p >/dev/null 2>&1; then
-        log_success "Shell function is available in current session"
-    else
-        log_info "Shell function will be available after restarting terminal"
-    fi
-    
+    log_success "Installation verified successfully" >&2
     return 0
 }
 
@@ -466,26 +259,25 @@ main() {
     local extract_dir=$(download_release "$version" "$platform")
     temp_dir="$extract_dir"
     
-    # Install components
-    install_binary "$extract_dir" "$platform"
+    # Install binary to consistent location
+    install_binary "$extract_dir"
     
-    # Setup shell configuration (includes PATH update)
-    update_path
-    setup_shell_config
+    # Setup shell integration (add to PATH)
+    setup_shell_integration
     
     # Verify installation
     if verify_installation; then
         echo ""
         log_success "🎉 Project Man has been successfully installed!"
         echo ""
-        log_info "You can start using Project Man right now!"
-        log_info "Try these commands:"
-        log_info "1. Initialize a workspace: p init ~/workspace"
-        log_info "2. Add repositories: p add rust-lang/rust"
-        log_info "3. Navigate: p go rust"
+        log_info "Next steps:"
+        log_info "1. Restart your terminal or run: source ~/.bashrc (or ~/.zshrc)"
+        log_info "2. Initialize a workspace: p init ~/workspace"
+        log_info "3. Add repositories: p add rust-lang/rust"
+        log_info "4. Navigate: p go rust"
         echo ""
-        log_info "💡 The 'p' command is now available in your current shell!"
-        log_info "💡 For new terminals, the function will be automatically loaded"
+        log_info "💡 The 'p' command will be available after restarting your terminal"
+        log_info "💡 Both 'p go' and 'p add' will automatically change directories"
         echo ""
         log_info "📚 For more information, visit: https://github.com/$REPO"
         echo ""
