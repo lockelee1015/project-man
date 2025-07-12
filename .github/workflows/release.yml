@@ -126,30 +126,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  update-install-script:
-    name: Update install script with latest version
-    needs: release
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update quick install script
-        run: |
-          # Update version in quick install script
-          sed -i "s/VERSION=\".*\"/VERSION=\"${{ github.ref_name }}\"/g" scripts/quick-install.sh
-          
-          # Commit if there are changes
-          if git diff --quiet; then
-            echo "No changes to commit"
-          else
-            git config --local user.email "action@github.com"
-            git config --local user.name "GitHub Action"
-            git add scripts/quick-install.sh
-            git commit -m "Update quick install script to version ${{ github.ref_name }}"
-            git push
-          fi
