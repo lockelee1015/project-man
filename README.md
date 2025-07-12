@@ -22,23 +22,39 @@ Project Man (`p`) is a Rust-based command-line tool designed to efficiently mana
 
 ### Installation
 
-#### From Source
+#### Quick Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lockelee/project-man/main/scripts/quick-install.sh | bash
+```
+
+#### Manual Installation
+
+1. **Download the latest release:**
+   - Go to [Releases](https://github.com/lockelee/project-man/releases)
+   - Download the appropriate archive for your platform:
+     - `project-man-x86_64-unknown-linux-gnu.tar.gz` (Linux x86_64)
+     - `project-man-aarch64-unknown-linux-gnu.tar.gz` (Linux ARM64)
+     - `project-man-x86_64-apple-darwin.tar.gz` (macOS Intel)
+     - `project-man-aarch64-apple-darwin.tar.gz` (macOS Apple Silicon)
+
+2. **Extract and install:**
+   ```bash
+   tar -xzf project-man-*.tar.gz
+   cd project-man-*
+   ./install.sh
+   ```
+
+#### From Source (Development)
 
 ```bash
 # Clone the repository
 git clone https://github.com/lockelee/project-man.git
 cd project-man
 
-# Build the release version
+# Build and install
 cargo build --release
-
-# Install to system path
-sudo cp target/release/p /usr/local/bin/
-
-# Set up shell integration
-echo 'source /path/to/project-man/shell-integration.sh' >> ~/.bashrc
-# or for zsh:
-echo 'source /path/to/project-man/shell-integration.sh' >> ~/.zshrc
+./install.sh
 ```
 
 ### Quick Start
@@ -177,23 +193,39 @@ Project Man (`p`) 是一个基于 Rust 的命令行工具，专为高效管理�
 
 ### 安装
 
-#### 从源码安装
+#### 快速安装（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lockelee/project-man/main/scripts/quick-install.sh | bash
+```
+
+#### 手动安装
+
+1. **下载最新版本:**
+   - 访问 [Releases](https://github.com/lockelee/project-man/releases)
+   - 下载适合你平台的压缩包:
+     - `project-man-x86_64-unknown-linux-gnu.tar.gz` (Linux x86_64)
+     - `project-man-aarch64-unknown-linux-gnu.tar.gz` (Linux ARM64)
+     - `project-man-x86_64-apple-darwin.tar.gz` (macOS Intel)
+     - `project-man-aarch64-apple-darwin.tar.gz` (macOS Apple Silicon)
+
+2. **解压并安装:**
+   ```bash
+   tar -xzf project-man-*.tar.gz
+   cd project-man-*
+   ./install.sh
+   ```
+
+#### 从源码安装（开发用）
 
 ```bash
 # 克隆仓库
 git clone https://github.com/lockelee/project-man.git
 cd project-man
 
-# 构建发布版本
+# 构建并安装
 cargo build --release
-
-# 安装到系统路径
-sudo cp target/release/p /usr/local/bin/
-
-# 设置 shell 集成
-echo 'source /path/to/project-man/shell-integration.sh' >> ~/.bashrc
-# 或者对于 zsh:
-echo 'source /path/to/project-man/shell-integration.sh' >> ~/.zshrc
+./install.sh
 ```
 
 ### 快速开始
