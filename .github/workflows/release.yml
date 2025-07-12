@@ -7,6 +7,10 @@ on:
   release:
     types: [published]
 
+permissions:
+  contents: write
+  releases: write
+
 jobs:
   build:
     name: Build for ${{ matrix.os }}
@@ -93,45 +97,33 @@ jobs:
         with:
           path: artifacts
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Project Man ${{ github.ref_name }}
-          body: |
-            ## Installation
-
-            ### Quick Install (Linux/macOS)
-            ```bash
-            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/quick-install.sh | bash
-            ```
-
-            ### Manual Installation
-            1. Download the appropriate archive for your platform below
-            2. Extract the archive
-            3. Run `./install.sh` in the extracted directory
-
-            ## What's Changed
-            See the [changelog](CHANGELOG.md) for details.
-
-            ## Platform Support
-            - ✅ Linux x86_64
-            - ✅ Linux ARM64
-            - ✅ macOS Intel
-            - ✅ macOS Apple Silicon
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
+      - name: Create Release and Upload Assets
         shell: bash
         run: |
-          for file in artifacts/*/project-man-*; do
-            echo "Uploading $file"
-            gh release upload ${{ github.ref_name }} "$file" --clobber
-          done
+          # Create release
+          gh release create ${{ github.ref_name }} \
+            --title "Project Man ${{ github.ref_name }}" \
+            --notes "## Installation
+
+          ### Quick Install (Linux/macOS)
+          \`\`\`bash
+          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/scripts/quick-install.sh | bash
+          \`\`\`
+
+          ### Manual Installation
+          1. Download the appropriate archive for your platform below
+          2. Extract the archive
+          3. Run \`./install.sh\` in the extracted directory
+
+          ## What's Changed
+          See the [changelog](CHANGELOG.md) for details.
+
+          ## Platform Support
+          - ✅ Linux x86_64
+          - ✅ Linux ARM64
+          - ✅ macOS Intel
+          - ✅ macOS Apple Silicon" \
+            artifacts/*/project-man-*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
