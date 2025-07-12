@@ -7,7 +7,7 @@
 set -e
 
 # Configuration
-REPO="lockelee/project-man"
+REPO="lockelee1015/project-man"
 VERSION="latest"  # Will be updated by GitHub Actions
 INSTALL_DIR="$HOME/.local/bin"
 CONFIG_DIR="$HOME/.config/project-man"
@@ -71,7 +71,7 @@ get_latest_version() {
         return
     fi
     
-    log_info "Fetching latest release information..."
+    log_info "Fetching latest release information..." >&2
     local latest_release
     if command -v curl >/dev/null 2>&1; then
         latest_release=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
