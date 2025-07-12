@@ -145,11 +145,11 @@ install_binary() {
         binary_path=$(find "$extract_dir" -name "p-bin" -type f | head -1)
     fi
     
-    # Look for wrapper script
-    if [ -f "$extract_dir/scripts/p" ]; then
-        wrapper_path="$extract_dir/scripts/p"
+    # Look for shell function script
+    if [ -f "$extract_dir/scripts/p-function.sh" ]; then
+        wrapper_path="$extract_dir/scripts/p-function.sh"
     else
-        wrapper_path=$(find "$extract_dir" -name "p" -type f | head -1)
+        wrapper_path=$(find "$extract_dir" -name "p-function.sh" -type f | head -1)
     fi
     
     if [ -z "$binary_path" ] || [ ! -f "$binary_path" ]; then
@@ -160,7 +160,7 @@ install_binary() {
     fi
     
     if [ -z "$wrapper_path" ] || [ ! -f "$wrapper_path" ]; then
-        log_error "Wrapper script p not found in extracted archive"
+        log_error "Shell function script p-function.sh not found in extracted archive"
         log_error "Contents of extract directory:"
         ls -la "$extract_dir" >&2
         exit 1
@@ -170,7 +170,6 @@ install_binary() {
     cp "$binary_path" "$INSTALL_DIR/"
     cp "$wrapper_path" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/p-bin"
-    chmod +x "$INSTALL_DIR/p"
     
     log_success "Binary and wrapper installed to $INSTALL_DIR/" >&2
 }
@@ -187,20 +186,21 @@ setup_shell_integration() {
         *) 
             log_error "Unsupported shell: $SHELL"
             log_info "Please add this line to your shell config manually:"
-            echo "export PATH=\"$INSTALL_DIR:\$PATH\""
+            echo "source \"$INSTALL_DIR/p-function.sh\""
             return
             ;;
     esac
     
-    # Add to PATH if not already there
-    if ! grep -q "$INSTALL_DIR" "$shell_config" 2>/dev/null; then
+    # Add shell function source if not already there
+    local source_line="source \"$INSTALL_DIR/p-function.sh\""
+    if ! grep -q "p-function.sh" "$shell_config" 2>/dev/null; then
         echo "" >> "$shell_config"
-        echo "# Project Man" >> "$shell_config"
-        echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_config"
-        log_success "Added to PATH in $shell_config" >&2
+        echo "# Project Man shell function" >> "$shell_config"
+        echo "$source_line" >> "$shell_config"
+        log_success "Added shell function to $shell_config" >&2
         log_info "Restart your terminal or run: source $shell_config" >&2
     else
-        log_info "Already configured in $shell_config" >&2
+        log_info "Shell function already configured in $shell_config" >&2
     fi
 }
 
@@ -209,14 +209,14 @@ setup_shell_integration() {
 verify_installation() {
     log_info "Verifying installation..." >&2
     
-    # Check if binary and wrapper exist and are executable
+    # Check if binary and shell function exist
     if [ ! -x "$INSTALL_DIR/p-bin" ]; then
         log_error "Binary not found or not executable at $INSTALL_DIR/p-bin"
         return 1
     fi
     
-    if [ ! -x "$INSTALL_DIR/p" ]; then
-        log_error "Wrapper script not found or not executable at $INSTALL_DIR/p"
+    if [ ! -f "$INSTALL_DIR/p-function.sh" ]; then
+        log_error "Shell function script not found at $INSTALL_DIR/p-function.sh"
         return 1
     fi
     

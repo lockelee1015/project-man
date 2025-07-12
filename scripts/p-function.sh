@@ -1,42 +1,38 @@
 #!/bin/bash
 
-# Project Man Shell Function
+# Project Man shell function
 # Source this file to get the p function that can change directories
 
 p() {
-    # Get the directory where this function is defined
-    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-    local binary_path="$script_dir/target/release/p-bin"
+    # Find the p-bin binary
+    local p_bin=""
     
-    # If binary doesn't exist in target/release, try current directory
-    if [ ! -f "$binary_path" ]; then
-        binary_path="$script_dir/p-bin"
+    # Try to find p-bin in the same directory as this script
+    if [ -n "${BASH_SOURCE[0]}" ]; then
+        local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        if [ -f "$script_dir/p-bin" ]; then
+            p_bin="$script_dir/p-bin"
+        fi
     fi
     
-    # If still not found, try to find it in PATH
-    if [ ! -f "$binary_path" ]; then
-        binary_path="$(which p-bin 2>/dev/null)"
+    # If not found, try common installation locations
+    if [ -z "$p_bin" ] || [ ! -f "$p_bin" ]; then
+        if [ -f "$HOME/.local/bin/project-man/p-bin" ]; then
+            p_bin="$HOME/.local/bin/project-man/p-bin"
+        elif command -v p-bin >/dev/null 2>&1; then
+            p_bin="$(which p-bin)"
+        else
+            echo "❌ Error: Project Man binary (p-bin) not found"
+            return 1
+        fi
     fi
     
-    # If still not found, error
-    if [ ! -f "$binary_path" ]; then
-        echo "❌ Error: Project Man binary not found!"
-        echo "   Expected locations:"
-        echo "   - $script_dir/target/release/p-bin"
-        echo "   - $script_dir/p-bin"
-        echo "   - p-bin in PATH"
-        echo ""
-        echo "   Please build the project first: cargo build --release"
-        return 1
-    fi
-    
-    # Get the first argument (command)
     local cmd="$1"
     
     # Commands that might change directory
     if [ "$cmd" = "go" ] || [ "$cmd" = "add" ]; then
         # Execute command and capture output
-        local output=$("$binary_path" "$@" --output-cd 2>&1)
+        local output=$("$p_bin" "$@" --output-cd 2>&1)
         local exit_code=$?
         
         # Check if command was successful
@@ -62,7 +58,7 @@ p() {
         fi
     else
         # For other commands, just pass through
-        "$binary_path" "$@"
+        "$p_bin" "$@"
     fi
 }
 
