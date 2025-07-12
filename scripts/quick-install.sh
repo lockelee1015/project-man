@@ -96,7 +96,7 @@ download_release() {
     local platform="$2"
     local temp_dir=$(mktemp -d)
     
-    log_info "Downloading Project Man $version for $platform..."
+    log_info "Downloading Project Man $version for $platform..." >&2
     
     local download_url="https://github.com/$REPO/releases/download/$version/project-man-$platform.tar.gz"
     local archive_name="project-man-$platform.tar.gz"
@@ -119,7 +119,7 @@ download_release() {
     fi
     
     # Extract the archive
-    log_info "Extracting archive..."
+    log_info "Extracting archive..." >&2
     tar -xzf "$archive_path" -C "$temp_dir"
     
     echo "$temp_dir"
@@ -135,10 +135,26 @@ install_binary() {
     # Create install directory
     mkdir -p "$INSTALL_DIR"
     
-    # Copy binary
+    # Find and copy binary
     local binary_name="p-bin"
+    local binary_path=""
     
-    cp "$extract_dir/$binary_name" "$INSTALL_DIR/"
+    # Look for binary in extract directory and subdirectories
+    if [ -f "$extract_dir/$binary_name" ]; then
+        binary_path="$extract_dir/$binary_name"
+    else
+        # Search in subdirectories
+        binary_path=$(find "$extract_dir" -name "$binary_name" -type f | head -1)
+    fi
+    
+    if [ -z "$binary_path" ] || [ ! -f "$binary_path" ]; then
+        log_error "Binary $binary_name not found in extracted archive"
+        log_error "Contents of extract directory:"
+        ls -la "$extract_dir" >&2
+        exit 1
+    fi
+    
+    cp "$binary_path" "$INSTALL_DIR/"
     chmod +x "$INSTALL_DIR/$binary_name"
     
     # Create symlink for easier access
@@ -156,8 +172,23 @@ install_shell_integration() {
     # Create config directory
     mkdir -p "$CONFIG_DIR"
     
-    # Copy shell integration files
-    cp -r "$extract_dir/scripts" "$CONFIG_DIR/"
+    # Find and copy shell integration files
+    local scripts_path=""
+    if [ -d "$extract_dir/scripts" ]; then
+        scripts_path="$extract_dir/scripts"
+    else
+        # Search in subdirectories
+        scripts_path=$(find "$extract_dir" -name "scripts" -type d | head -1)
+    fi
+    
+    if [ -z "$scripts_path" ] || [ ! -d "$scripts_path" ]; then
+        log_error "Scripts directory not found in extracted archive"
+        log_error "Contents of extract directory:"
+        ls -la "$extract_dir" >&2
+        exit 1
+    fi
+    
+    cp -r "$scripts_path" "$CONFIG_DIR/"
     
     # Make scripts executable
     chmod +x "$CONFIG_DIR/scripts/"*.sh
