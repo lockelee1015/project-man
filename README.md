@@ -1,16 +1,65 @@
 # Project Man (p)
 
-A powerful CLI tool for managing multiple Git repositories in a unified workspace.
+*Stop losing track of your Git repositories. Start organizing them.*
 
 [中文说明](#中文说明) | [English](#english)
 
 ## English
 
-### Overview
+### The Problem
 
-Project Man (`p`) is a Rust-based command-line tool designed to efficiently manage multiple code repositories locally. It provides a unified workspace for organizing, cloning, navigating, and maintaining Git repositories with a focus on developer productivity and ease of use.
+As a developer, you probably have this frustrating experience:
 
-### Features
+- **"Where did I put that project?"** - Repositories scattered across `~/Desktop`, `~/Downloads`, `~/dev`, `~/projects`...
+- **"Was it called `awesome-tool` or `awesome_tool`?"** - Spending minutes just finding the right directory
+- **"Which version is this?"** - Multiple copies of the same project in different folders
+- **"I need to update all my repos..."** - Manually checking each project one by one
+
+*Sound familiar? You're not alone.*
+
+### The Solution
+
+Project Man (`p`) transforms chaos into order with one simple principle: **organize by source, navigate by memory**.
+
+```bash
+# Your scattered projects become organized:
+~/workspace/
+├── github.com/rust-lang/rust/     # Clear ownership
+├── github.com/microsoft/vscode/   # No confusion
+└── gitlab.com/your-company/api/   # Multiple hosts, one place
+
+# Navigate instantly without remembering exact names:
+p go rust           # → ~/workspace/github.com/rust-lang/rust/
+p go vscode         # → ~/workspace/github.com/microsoft/vscode/
+p go api            # → ~/workspace/gitlab.com/your-company/api/
+```
+
+### See It In Action
+
+**From chaos to organized in seconds:**
+
+```bash
+# 1. Initialize your organized workspace
+p init ~/workspace
+
+# 2. Add projects from anywhere - they get organized automatically
+p add rust-lang/rust                    # GitHub shorthand
+p add https://github.com/microsoft/vscode
+p add git@gitlab.com:company/secret-api
+
+# 3. Navigate instantly with fuzzy search
+p go rust        # Takes you to rust-lang/rust immediately
+p go vs          # Finds and navigates to vscode
+p go secret      # Jumps to your company's API project
+
+# 4. Keep everything up to date
+p sync           # Updates all repositories
+p list           # See status of all projects at a glance
+```
+
+**Result:** No more hunting through folders. No more "where did I put that?" Just type a few letters and you're there.
+
+### Core Features
 
 - 🚀 **Quick Repository Management**: Clone, sync, and organize repositories with simple commands
 - 🔍 **Fuzzy Search Navigation**: Instantly navigate between repositories using fuzzy matching
@@ -177,9 +226,58 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 中文说明
 
-### 概述
+### 痛点场景
 
-Project Man (`p`) 是一个基于 Rust 的命令行工具，专为高效管理本地多个代码仓库而设计。它提供了一个统一的工作区来组织、克隆、导航和维护 Git 仓库，专注于提升开发者的生产力和使用便利性。
+作为开发者，你是否也有这样的困扰：
+
+- **"那个项目放哪儿了？"** - 代码仓库散落在 `~/Desktop`、`~/Downloads`、`~/dev`、`~/projects` 各个角落
+- **"叫什么名字来着？"** - 为了找到正确的目录，花费好几分钟回忆项目名称
+- **"这是哪个版本？"** - 同一个项目在不同文件夹有多个副本
+- **"需要更新所有项目..."** - 一个个手动检查每个项目的状态
+
+*这些场景是不是很熟悉？你并不孤单。*
+
+### 解决方案
+
+Project Man (`p`) 用一个简单的原则将混乱变为有序：**按来源组织，凭记忆导航**。
+
+```bash
+# 散乱的项目变得井然有序：
+~/workspace/
+├── github.com/rust-lang/rust/      # 清晰的归属
+├── github.com/microsoft/vscode/    # 不再困惑
+└── gitlab.com/your-company/api/    # 多个主机，统一管理
+
+# 无需记住确切名称，即时导航：
+p go rust           # → ~/workspace/github.com/rust-lang/rust/
+p go vscode         # → ~/workspace/github.com/microsoft/vscode/
+p go api            # → ~/workspace/gitlab.com/your-company/api/
+```
+
+### 实际效果
+
+**几秒钟从混乱到有序：**
+
+```bash
+# 1. 初始化有序的工作区
+p init ~/workspace
+
+# 2. 从任何地方添加项目 - 自动组织
+p add rust-lang/rust                    # GitHub 简写
+p add https://github.com/microsoft/vscode
+p add git@gitlab.com:company/secret-api
+
+# 3. 模糊搜索即时导航
+p go rust        # 立即跳转到 rust-lang/rust
+p go vs          # 找到并导航到 vscode
+p go secret      # 跳转到公司的 API 项目
+
+# 4. 保持所有项目最新
+p sync           # 更新所有仓库
+p list           # 一览所有项目状态
+```
+
+**结果：** 不再在文件夹中寻找。不再有"放哪儿了？"的困扰。只需输入几个字母就能到达目的地。
 
 ### 特性
 
