@@ -163,6 +163,8 @@ install_binary() {
         log_error "Shell function script p-function.sh not found in extracted archive"
         log_error "Contents of extract directory:"
         ls -la "$extract_dir" >&2
+        log_error "Contents of scripts directory:"
+        ls -la "$extract_dir/scripts" >&2
         exit 1
     fi
     
