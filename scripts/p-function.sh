@@ -120,6 +120,4 @@ if [ -n "$ZSH_VERSION" ]; then
     compdef _p_completion p
 fi
 
-echo "✅ Project Man function loaded!"
-echo "💡 Use 'p go <pattern>' to navigate to repositories"
-echo "💡 Use 'p add <repo>' to clone and navigate to new repositories"
+# Project Man function loaded silently
