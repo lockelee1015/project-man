@@ -74,13 +74,13 @@ p list           # See status of all projects at a glance
 #### Quick Install (Recommended)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lockelee/project-man/main/scripts/quick-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/lockelee1015/project-man/main/scripts/quick-install.sh | bash
 ```
 
 #### Manual Installation
 
 1. **Download the latest release:**
-   - Go to [Releases](https://github.com/lockelee/project-man/releases)
+   - Go to [Releases](https://github.com/lockelee1015/project-man/releases)
    - Download the appropriate archive for your platform:
      - `project-man-x86_64-unknown-linux-gnu.tar.gz` (Linux x86_64)
      - `project-man-aarch64-unknown-linux-gnu.tar.gz` (Linux ARM64)
@@ -98,7 +98,7 @@ curl -fsSL https://raw.githubusercontent.com/lockelee/project-man/main/scripts/q
 
 ```bash
 # Clone the repository
-git clone https://github.com/lockelee/project-man.git
+git clone https://github.com/lockelee1015/project-man.git
 cd project-man
 
 # Build and install
@@ -294,13 +294,13 @@ p list           # 一览所有项目状态
 #### 快速安装（推荐）
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lockelee/project-man/main/scripts/quick-install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/lockelee1015/project-man/main/scripts/quick-install.sh | bash
 ```
 
 #### 手动安装
 
 1. **下载最新版本:**
-   - 访问 [Releases](https://github.com/lockelee/project-man/releases)
+   - 访问 [Releases](https://github.com/lockelee1015/project-man/releases)
    - 下载适合你平台的压缩包:
      - `project-man-x86_64-unknown-linux-gnu.tar.gz` (Linux x86_64)
      - `project-man-aarch64-unknown-linux-gnu.tar.gz` (Linux ARM64)
@@ -318,7 +318,7 @@ curl -fsSL https://raw.githubusercontent.com/lockelee/project-man/main/scripts/q
 
 ```bash
 # 克隆仓库
-git clone https://github.com/lockelee/project-man.git
+git clone https://github.com/lockelee1015/project-man.git
 cd project-man
 
 # 构建并安装
